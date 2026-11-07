@@ -343,7 +343,7 @@ function vSettings(){const cs=db.settings.courses;
   <input type="file" id="file" accept=".json,application/json" hidden></div>
   <div class="panel"><h3>多设备同步（GitHub 私有仓库）</h3>
   <div class="sub" style="margin-bottom:8px">${Sync.cfg()?'已开启：'+esc(Sync.cfg().owner+'/'+Sync.cfg().repo):'未开启。每台设备填一次即可，令牌只保存在这台设备上。'}</div>
-  <div class="bar"><input id="gRepo" placeholder="私有仓库，如 lrx-bot/class-data" class="grow" value="${esc(Sync.cfg()?Sync.cfg().owner+'/'+Sync.cfg().repo:'')}">
+  <div class="bar"><input id="gRepo" placeholder="私有仓库，如 lrx-bot/class_data" class="grow" value="${esc(Sync.cfg()?Sync.cfg().owner+'/'+Sync.cfg().repo:'')}">
   <input id="gTok" type="password" placeholder="GitHub 令牌" class="grow"></div>
   <div class="bar"><button class="b p" id="gOn">${Sync.cfg()?'更新设置并同步':'开启同步'}</button>${Sync.cfg()?'<button class="b" id="gNow">立即同步</button><button class="b d" id="gOff">在本机关闭同步</button>':''}</div></div>
   <div class="panel"><h3>清空数据</h3><button class="b d" id="clr">清空全部数据</button> <span class="sub">删除所有学员和流水，无法恢复，请先导出备份。</span></div>`;
