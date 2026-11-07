@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>学员课时管理</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--ink:#1f2328;--muted:#6b7280;--line:#e6e3dd;--accent:#7a5cff;--accent-soft:#efeaff;--warn:#d97706;--warn-soft:#fff6e5;--danger:#dc2626;--danger-soft:#fdecec;--ok:#16a34a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+header{padding:20px 16px 8px;max-width:960px;margin:auto}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.kpi b{display:block;font-size:22px}
+.kpi span{color:var(--muted);font-size:12px}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+nav .in{max-width:960px;margin:auto;display:flex;gap:4px;padding:6px 16px;overflow-x:auto}
+nav button{border:0;background:none;padding:8px 14px;border-radius:999px;font-size:15px;color:var(--muted);cursor:pointer;white-space:nowrap}
+nav button.on{background:var(--accent);color:#fff}
+main{max-width:960px;margin:auto;padding:16px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.grow{flex:1}
+button.b{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 12px;font-size:14px;cursor:pointer;color:var(--ink)}
+button.p{background:var(--accent);border-color:var(--accent);color:#fff}
+button.d{color:var(--danger);border-color:#f3c4c4}
+button:disabled{opacity:.45;cursor:not-allowed}
+input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:10px;padding:7px 10px;background:#fff;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.stu{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.stu.warn{background:var(--warn-soft);border-color:#f5d39b}
+.stu.zero{background:var(--danger-soft);border-color:#f3b4b4}
+.stu .top{display:flex;justify-content:space-between;align-items:baseline}
+.stu .name{font-weight:600;font-size:16px}
+.stu .bal{font-size:24px;font-weight:700}
+.stu .meta{color:var(--muted);font-size:12px;margin:2px 0 8px}
+.stu .acts{display:flex;gap:6px;flex-wrap:wrap}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.panel h3{margin:0 0 10px;font-size:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:500}
+.tw{overflow-x:auto}
+.pos{color:var(--ok)}.neg{color:var(--danger)}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.tag.gray{background:#eee;color:#777}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px dashed var(--line)}
+.row:last-child{border:0}
+.empty{color:var(--muted);text-align:center;padding:30px}
+dialog{border:0;border-radius:16px;padding:0;max-width:440px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+.dlg{padding:18px}
+.dlg h3{margin:0 0 12px}
+.dlg label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+.dlg input,.dlg select,.dlg textarea{width:100%}
+.dlg .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.chk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.chk input{width:auto}
+.list{max-height:50vh;overflow:auto}
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;opacity:0;transition:.2s;pointer-events:none}
+.toast.on{opacity:1}
+@media(max-width:600px){.kpis{grid-template-columns:repeat(2,1fr)}.cards3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>学员课时管理</h1>
+  <div class="sub" id="syncInfo">数据保存在本机浏览器</div>
+  <div class="kpis">
+    <div class="kpi"><b id="kStu">0</b><span>学员总数</span></div>
+    <div class="kpi"><b id="kBal">0</b><span>总剩余课时</span></div>
+    <div class="kpi"><b id="kToday">0</b><span>今日上课人次</span></div>
+    <div class="kpi"><b id="kWarn">0</b><span>待提醒人数</span></div>
+  </div>
+</header>
+<nav><div class="in" id="tabs">
+  <button data-t="students" class="on">学员</button>
+  <button data-t="log">流水</button>
+  <button data-t="stats">统计</button>
+  <button data-t="income">收入</button>
+  <button data-t="settings">设置</button>
+</div></nav>
+<main id="view"></main>
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ========== 数据层 ========== */
+const KEY = 'course-hours-v1';
+const WD = ['周日','周一','周二','周三','周四','周五','周六'];
+const TYPE = {consume:'上课消耗',recharge:'充值课时',adjust:'人工调整',undo:'撤销扣课',init:'初始录入'};
+let db = load();
+
+function blank(){return {students:[],transactions:[],settings:{warningThreshold:2,courses:[
+  {id:'c1',weekday:1,name:'芭杆塑形跟练'},{id:'c2',weekday:2,name:'芭杆形体课'},
+  {id:'c3',weekday:3,name:'舞韵瑜伽课'},{id:'c4',weekday:5,name:'芭杆塑形跟练'}]},createdAt:new Date().toISOString()}}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.students)return normalize(s)}catch(e){}return blank()}
+function normalize(d){
+  d.settings=d.settings||{};d.settings.courses=d.settings.courses||[];
+  if(d.settings.warningThreshold==null)d.settings.warningThreshold=2;
+  d.settings.courses.forEach(c=>{if(c.archived==null)c.archived=false;if(c.weekday===undefined)c.weekday=null});
+  d.transactions=d.transactions||[];
+  // 旧数据补上 courseId（按当时的课程名匹配），这样改名后仍能统计到同一门课
+  const lab=c=>c.name+(c.weekday==null?'':'（'+WD[c.weekday]+'）');
+  d.transactions.forEach(t=>{if(t.type==='consume'&&!t.courseId&&t.course){const c=d.settings.courses.find(c=>lab(c)===t.course);if(c)t.courseId=c.id}});
+  // 旧的撤销记录补上 undoOf（对应同一学员之前最近一次未撤销的扣课）
+  const used=new Set(d.transactions.filter(t=>t.undoOf).map(t=>t.undoOf));
+  d.transactions.forEach((t,i)=>{if(t.type!=='undo'||t.undoOf)return;
+    for(let j=i-1;j>=0;j--){const x=d.transactions[j];if(x.studentId===t.studentId&&x.type==='consume'&&!used.has(x.id)){t.undoOf=x.id;used.add(x.id);break}}});
+  return d}
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast('保存失败：'+e.message)}}
+function save(){saveLocal();render();Sync.schedule()}
+
+/* ========== GitHub 私有仓库同步 ========== */
+// 合并两份数据：流水按 id 取并集，学员按 id 取并集（已删除的除外），再由流水重算余额
+function merge(a,b){
+  const cleared=[a.clearedAt,b.clearedAt].filter(Boolean).sort().pop()||'';
+  const deleted=new Set([...(a.deleted||[]),...(b.deleted||[])]);
+  const tx=new Map();[...a.transactions,...b.transactions].forEach(t=>{if(t.time>=cleared&&!tx.has(t.id))tx.set(t.id,t)});
+  const st=new Map();[...a.students,...b.students].forEach(s=>{if(deleted.has(s.id)||(s.createdAt||'')<cleared)return;
+    const o=st.get(s.id);if(!o||(s.updatedAt||'')>(o.updatedAt||''))st.set(s.id,{...s})});
+  const cs=new Map();[...a.settings.courses,...b.settings.courses].forEach(c=>{const o=cs.get(c.id);if(!o||(c.updatedAt||'')>(o.updatedAt||''))cs.set(c.id,{...c})});
+  const sa=a.settings,sb=b.settings,newer=(sb.updatedAt||'')>(sa.updatedAt||'')?sb:sa;
+  const out={students:[...st.values()].sort((x,y)=>(x.createdAt||'').localeCompare(y.createdAt||'')),
+    transactions:[...tx.values()].sort((x,y)=>x.time.localeCompare(y.time)),
+    settings:{warningThreshold:newer.warningThreshold,updatedAt:newer.updatedAt,courses:[...cs.values()]},
+    deleted:[...deleted],clearedAt:cleared||undefined,createdAt:a.createdAt||b.createdAt};
+  out.students.forEach(s=>{const ts=out.transactions.filter(t=>t.studentId===s.id);if(!ts.length)return;
+    s.balance=0;s.purchasedTotal=0;s.consumedTotal=0;
+    ts.forEach(t=>{s.balance+=t.delta;if(t.type==='init'||t.type==='recharge')s.purchasedTotal+=t.delta;
+      if(t.type==='consume'){s.consumedTotal-=t.delta;s.lastCheckIn=t.time}if(t.type==='undo')s.consumedTotal-=t.delta})});
+  return normalize(out)}
+const b64e=s=>{const b=new TextEncoder().encode(s);let r='';for(let i=0;i<b.length;i+=0x8000)r+=String.fromCharCode(...b.subarray(i,i+0x8000));return btoa(r)};
+const b64d=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+const Sync={
+  KEY:'course-hours-sync',timer:null,busy:false,again:false,
+  cfg(){try{return JSON.parse(localStorage.getItem(this.KEY))||null}catch(e){return null}},
+  setCfg(c){try{c?localStorage.setItem(this.KEY,JSON.stringify(c)):localStorage.removeItem(this.KEY)}catch(e){}},
+  status(t,ok){const el=$('#syncInfo');if(el){el.textContent=t;el.style.color=ok===false?'var(--danger)':''}},
+  api(c,method,body){return fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${encodeURIComponent(c.path||'data.json')}`+(method==='GET'?'?t='+Date.now():''),
+    {method,headers:{Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json'},body:body&&JSON.stringify(body),cache:'no-store'})},
+  async pull(c){const r=await this.api(c,'GET');if(r.status===404)return{data:null,sha:null};
+    if(!r.ok)throw new Error(r.status===401?'令牌无效或已过期':r.status===403?'令牌没有这个仓库的权限':'GitHub 返回 '+r.status);
+    const j=await r.json();
+    let text=j.content?b64d(j.content):'';
+    if(!text&&j.download_url){const raw=await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/git/blobs/${j.sha}`,{headers:{Authorization:'Bearer '+c.token,Accept:'application/vnd.github.raw'}});text=await raw.text()}
+    return{data:text?normalize(JSON.parse(text)):null,sha:j.sha}},
+  schedule(){if(!this.cfg())return;clearTimeout(this.timer);this.status('有改动，准备同步…');this.timer=setTimeout(()=>this.run(),1200)},
+  async run(){const c=this.cfg();if(!c)return;if(this.busy){this.again=true;return}this.busy=true;this.status('正在同步…');
+    try{for(let i=0;i<3;i++){const{data,sha}=await this.pull(c);
+        const merged=data?merge(data,db):db;
+        const before=JSON.stringify(db);db=merged;saveLocal();if(JSON.stringify(db)!==before)render();
+        if(data&&JSON.stringify(merge(data,data))===JSON.stringify(merged)){break}
+        const r=await this.api(c,'PUT',{message:'更新课时数据 '+fmtT(now()),content:b64e(JSON.stringify(merged,null,1)),...(sha?{sha}:{})});
+        if(r.ok)break;if(r.status!==409&&r.status!==422)throw new Error('上传失败 '+r.status);}
+      this.status('已同步到 GitHub · '+fmtT(now()).slice(11),true);
+    }catch(e){this.status('同步失败：'+e.message+'（数据已保存在本机）',false)}
+    this.busy=false;if(this.again){this.again=false;this.run()}}
+};
+window.addEventListener('focus',()=>Sync.cfg()&&Sync.run());
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const now=()=>new Date().toISOString();
+const stu=id=>db.students.find(s=>s.id===id);
+const courseLabel=c=>c.name+(c.weekday==null?'':'（'+WD[c.weekday]+'）');
+const activeCourses=()=>db.settings.courses.filter(c=>!c.archived);
+const fmtT=t=>{const d=new Date(t);return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`};
+const p2=n=>String(n).padStart(2,'0');
+const ymd=t=>{const d=new Date(t);return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>'¥'+(Math.round(n*100)/100).toLocaleString('zh-CN');
+
+function addTx(s,type,delta,{course='',courseId='',amount=0,note=''}={}){
+  s.balance+=delta;
+  if(type==='init'||type==='recharge')s.purchasedTotal=(s.purchasedTotal||0)+delta;
+  if(type==='consume'){s.consumedTotal=(s.consumedTotal||0)-delta;s.lastCheckIn=now()}
+  if(type==='undo')s.consumedTotal=(s.consumedTotal||0)-delta;
+  const t={id:uid(),studentId:s.id,name:s.name,type,delta,remaining:s.balance,note,course,amount:+amount||0,time:now()};
+  if(courseId)t.courseId=courseId;
+  db.transactions.push(t);return t}
+
+/* ========== 通用 UI ========== */
+let tab='students',filters={stu:'all',type:'all',statStu:'',statYear:new Date().getFullYear()};
+const $=s=>document.querySelector(s);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),1800)}
+function dialog(html,onOk){const d=$('#dlg');$('#dlgBody').innerHTML=html;d.showModal();
+  const ok=$('#dlgBody [data-ok]');if(ok)ok.onclick=()=>{if(onOk()!==false)d.close()};
+  $('#dlgBody [data-cancel]')?.addEventListener('click',()=>d.close())}
+const foot=(ok='确定')=>`<div class="foot"><button class="b" data-cancel>取消</button><button class="b p" data-ok>${ok}</button></div>`;
+const courseOptions=(sel)=>{const today=new Date().getDay();const cs=activeCourses();
+  const def=sel||cs.find(c=>c.weekday===today)?.id||cs[0]?.id;
+  return cs.map(c=>`<option value="${c.id}" ${c.id===def?'selected':''}>${esc(courseLabel(c))}</option>`).join('')||'<option value="">（没有可用课程）</option>'};
+
+$('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.t;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));render()};
+
+function render(){
+  const th=db.settings.warningThreshold,today=ymd(new Date());
+  $('#kStu').textContent=db.students.length;
+  $('#kBal').textContent=db.students.reduce((a,s)=>a+s.balance,0);
+  $('#kToday').textContent=db.transactions.filter(t=>t.type==='consume'&&ymd(t.time)===today).length
+    -db.transactions.filter(t=>t.type==='undo'&&ymd(t.time)===today).length;
+  $('#kWarn').textContent=db.students.filter(s=>s.balance<=th).length;
+  ({students:vStudents,log:vLog,stats:vStats,income:vIncome,settings:vSettings})[tab]()}
+
+/* ========== 学员 ========== */
+function vStudents(){
+  const th=db.settings.warningThreshold;
+  let list=[...db.students];
+  if(filters.stu==='warn')list=list.filter(s=>s.balance<=th&&s.balance>0);
+  if(filters.stu==='zero')list=list.filter(s=>s.balance<=0);
+  list.sort((a,b)=>(b.balance<=0)-(a.balance<=0));
+  $('#view').innerHTML=`<div class="bar">
+    <select id="fStu"><option value="all">全部学员</option><option value="warn">课时不足</option><option value="zero">课时用完</option></select>
+    <input id="q" placeholder="搜索姓名" class="grow">
+    <button class="b" id="batch">批量签到</button><button class="b p" id="add">＋ 添加学员</button></div>
+    <div class="grid" id="grid"></div>`;
+  $('#fStu').value=filters.stu;$('#fStu').onchange=e=>{filters.stu=e.target.value;render()};
+  const draw=q=>{const g=$('#grid');const l=list.filter(s=>!q||s.name.includes(q));
+    g.innerHTML=l.map(s=>{const cls=s.balance<=0?'zero':s.balance<=th?'warn':'';
+      return `<div class="stu ${cls}"><div class="top"><span class="name">${esc(s.name)}</span><span class="bal">${s.balance}</span></div>
+      <div class="meta">已购 ${s.purchasedTotal||0} · 已上 ${s.consumedTotal||0}${s.lastCheckIn?' · 最近 '+ymd(s.lastCheckIn):''}${s.note?' · '+esc(s.note):''}</div>
+      <div class="acts"><button class="b p" data-a="in" data-id="${s.id}" ${s.balance<=0?'disabled':''}>上课 −1</button>
+      <button class="b" data-a="re" data-id="${s.id}">充值</button><button class="b" data-a="adj" data-id="${s.id}">调整</button>
+      <button class="b" data-a="his" data-id="${s.id}">记录</button><button class="b" data-a="st" data-id="${s.id}">统计</button></div></div>`}).join('')||'<div class="empty">还没有学员</div>'};
+  draw('');$('#q').oninput=e=>draw(e.target.value.trim());
+  $('#grid').onclick=e=>{const b=e.target.closest('button');if(!b)return;const s=stu(b.dataset.id);
+    ({in:checkIn,re:recharge,adj:adjust,his:history,st:x=>{filters.statStu=x.id;tab='stats';
+      document.querySelectorAll('#tabs button').forEach(y=>y.classList.toggle('on',y.dataset.t==='stats'));render()}})[b.dataset.a](s)};
+  $('#add').onclick=addStudent;$('#batch').onclick=batchCheckIn}
+
+function addStudent(){dialog(`<h3>添加学员</h3><label>姓名</label><input id="n"><label>初始课时</label><input id="h" type="number" value="8" min="0">
+  <label>收款金额（元）</label><input id="m" type="number" value="0" min="0"><label>备注</label><input id="nt">${foot('添加')}`,()=>{
+  const name=$('#n').value.trim();if(!name){toast('请填写姓名');return false}
+  if(db.students.some(s=>s.name===name)&&!confirm('已有同名学员，仍然添加？'))return false;
+  const s={id:uid(),name,phone:'',balance:0,purchasedTotal:0,consumedTotal:0,note:$('#nt').value.trim(),createdAt:now()};
+  db.students.push(s);addTx(s,'init',+$('#h').value||0,{amount:$('#m').value,note:'初始录入课时'});save();toast('已添加 '+name)})}
+
+function checkIn(s){dialog(`<h3>${esc(s.name)} 上课签到</h3><label>课程</label><select id="c">${courseOptions()}</select>${foot('扣 1 课时')}`,()=>{
+  const c=db.settings.courses.find(x=>x.id===$('#c').value);if(!c){toast('请先在设置里添加课程');return false}
+  if(s.balance<=0){toast('课时已用完，请先充值');return false}
+  const t=addTx(s,'consume',-1,{course:courseLabel(c),courseId:c.id});save();
+  undoToast(t)})}
+function undoToast(t){const el=$('#toast');el.innerHTML=`已扣课 <u style="cursor:pointer;pointer-events:auto" id="ud">撤销</u>`;el.classList.add('on');el.style.pointerEvents='auto';
+  clearTimeout(el._h);el._h=setTimeout(()=>{el.classList.remove('on');el.style.pointerEvents='none'},5000);
+  $('#ud').onclick=()=>{undo(t);el.classList.remove('on');el.style.pointerEvents='none'}}
+function undo(t){const s=stu(t.studentId);if(!s)return;
+  if(db.transactions.some(x=>x.type==='undo'&&x.undoOf===t.id)){toast('这条已经撤销过了');return}
+  const u=addTx(s,'undo',1,{note:`撤销误操作扣课（${t.course}），返还 1 课时`});u.undoOf=t.id;save();toast('已撤销')}
+
+function batchCheckIn(){const ok=db.students.filter(s=>s.balance>0);
+  dialog(`<h3>批量签到</h3><label>课程</label><select id="c">${courseOptions()}</select><label>选择学员（${ok.length} 人有课时）</label>
+  <div class="list">${ok.map(s=>`<label class="chk"><input type="checkbox" value="${s.id}"> ${esc(s.name)} <span class="sub">剩 ${s.balance}</span></label>`).join('')}</div>${foot('签到')}`,()=>{
+  const c=db.settings.courses.find(x=>x.id===$('#c').value);if(!c){toast('请先添加课程');return false}
+  const ids=[...document.querySelectorAll('#dlgBody input[type=checkbox]:checked')].map(i=>i.value);if(!ids.length){toast('请选择学员');return false}
+  ids.forEach(id=>addTx(stu(id),'consume',-1,{course:courseLabel(c),courseId:c.id}));save();toast(`已为 ${ids.length} 人签到`)})}
+
+function recharge(s){dialog(`<h3>${esc(s.name)} 充值</h3><label>课时数</label><input id="h" type="number" value="8" min="1">
+  <label>收款金额（元）</label><input id="m" type="number" value="398" min="0"><label>备注</label><input id="nt">${foot('充值')}`,()=>{
+  const h=+$('#h').value;if(!(h>0)){toast('课时数要大于 0');return false}
+  addTx(s,'recharge',h,{amount:$('#m').value,note:$('#nt').value.trim()||`充值 ${h} 课时`});save();toast('充值成功')})}
+
+function adjust(s){dialog(`<h3>${esc(s.name)} 人工调整</h3><label>增减课时（可填负数）</label><input id="h" type="number" value="0">
+  <label>原因（必填）</label><input id="nt">${foot('调整')}`,()=>{
+  const h=+$('#h').value,nt=$('#nt').value.trim();if(!h){toast('请填写增减数');return false}if(!nt){toast('请填写原因');return false}
+  addTx(s,'adjust',h,{note:nt});save();toast('已调整')})}
+
+function history(s){const tx=db.transactions.filter(t=>t.studentId===s.id).slice().reverse();
+  dialog(`<h3>${esc(s.name)} 的记录</h3><div class="list tw"><table><tr><th>时间</th><th>类型</th><th>变动</th><th>剩余</th><th></th></tr>
+  ${tx.map(t=>`<tr><td>${fmtT(t.time)}</td><td>${TYPE[t.type]||t.type}${t.course?'<br><span class="sub">'+esc(t.course)+'</span>':''}</td>
+  <td class="${t.delta>0?'pos':'neg'}">${t.delta>0?'+':''}${t.delta}</td><td>${t.remaining}</td>
+  <td>${t.type==='consume'&&!db.transactions.some(x=>x.undoOf===t.id)?`<button class="b" data-u="${t.id}">撤销</button>`:''}</td></tr>`).join('')}</table></div>
+  <div class="foot"><button class="b d" id="delS">删除学员</button><span class="grow"></span><button class="b" data-cancel>关闭</button></div>`);
+  $('#dlgBody').onclick=e=>{const u=e.target.dataset.u;if(u&&confirm('撤销这次扣课并返还 1 课时？')){undo(db.transactions.find(t=>t.id===u));$('#dlg').close()}};
+  $('#delS').onclick=()=>{if(confirm(`删除学员「${s.name}」？她的流水记录会保留。`)){db.students=db.students.filter(x=>x.id!==s.id);(db.deleted=db.deleted||[]).push(s.id);save();$('#dlg').close()}}}
+
+/* ========== 流水 ========== */
+function vLog(){const tx=db.transactions.filter(t=>filters.type==='all'||t.type===filters.type).slice().reverse();
+  $('#view').innerHTML=`<div class="bar"><select id="ft"><option value="all">全部类型</option>${Object.entries(TYPE).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
+  <span class="sub">共 ${tx.length} 条</span></div><div class="panel tw"><table><tr><th>时间</th><th>学员</th><th>类型</th><th>课程</th><th>变动</th><th>剩余</th><th>金额</th><th>备注</th></tr>
+  ${tx.map(t=>`<tr><td>${fmtT(t.time)}</td><td>${esc(t.name)}</td><td>${TYPE[t.type]||t.type}</td><td>${esc(t.course)}</td>
+  <td class="${t.delta>0?'pos':'neg'}">${t.delta>0?'+':''}${t.delta}</td><td>${t.remaining}</td><td>${t.amount?money(t.amount):''}</td><td>${esc(t.note)}</td></tr>`).join('')}</table>
+  ${tx.length?'':'<div class="empty">暂无记录</div>'}</div>`;
+  $('#ft').value=filters.type;$('#ft').onchange=e=>{filters.type=e.target.value;render()}}
+
+/* ========== 统计 ========== */
+function statsFor(sid,year){
+  const tx=db.transactions.filter(t=>t.studentId===sid&&new Date(t.time).getFullYear()===year);
+  const months=Array.from({length:12},()=>({att:0,buy:0,amt:0,by:{}}));
+  const undone=new Set(tx.filter(t=>t.undoOf).map(t=>t.undoOf));
+  tx.forEach(t=>{const m=months[new Date(t.time).getMonth()];
+    if(t.type==='consume'){m.att++;const k=t.course||'未注明课程';m.by[k]=(m.by[k]||0)+1}
+    if(t.type==='undo'){m.att--;const o=db.transactions.find(x=>x.id===t.undoOf);const k=o?.course||'未注明课程';m.by[k]=(m.by[k]||0)-1}
+    if(t.type==='init'||t.type==='recharge'){m.buy+=t.delta;m.amt+=t.amount||0}});
+  months.forEach(m=>Object.keys(m.by).forEach(k=>{if(m.by[k]<=0)delete m.by[k]}));
+  return months}
+function vStats(){
+  const years=[...new Set(db.transactions.map(t=>new Date(t.time).getFullYear()))].sort();if(!years.includes(filters.statYear))years.push(filters.statYear);
+  if(!filters.statStu||!stu(filters.statStu))filters.statStu=db.students[0]?.id||'';
+  const s=stu(filters.statStu);
+  $('#view').innerHTML=`<div class="bar"><select id="ss">${db.students.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select>
+  <select id="sy">${years.map(y=>`<option>${y}</option>`).join('')}</select><span class="grow"></span><button class="b" id="exS">导出本页（CSV）</button></div><div id="sv"></div>`;
+  if(!s){$('#sv').innerHTML='<div class="empty">还没有学员</div>';return}
+  $('#ss').value=s.id;$('#sy').value=filters.statYear;
+  $('#ss').onchange=e=>{filters.statStu=e.target.value;render()};$('#sy').onchange=e=>{filters.statYear=+e.target.value;render()};
+  const ms=statsFor(s.id,filters.statYear);
+  const y={att:0,buy:0,amt:0,by:{}};ms.forEach(m=>{y.att+=m.att;y.buy+=m.buy;y.amt+=m.amt;for(const k in m.by)y.by[k]=(y.by[k]||0)+m.by[k]});
+  const byStr=by=>Object.entries(by).map(([k,v])=>`${esc(k)} ${v}`).join('，')||'—';
+  $('#sv').innerHTML=`<div class="cards3"><div class="kpi"><b>${y.att}</b><span>${filters.statYear} 年上课节数</span></div>
+  <div class="kpi"><b>${y.buy}</b><span>${filters.statYear} 年充值课时</span></div><div class="kpi"><b>${money(y.amt)}</b><span>${filters.statYear} 年缴费金额</span></div></div>
+  <div class="panel"><h3>${esc(s.name)} · 按课程（全年）</h3>${byStr(y.by)}<div class="sub" style="margin-top:6px">当前剩余 ${s.balance} 课时</div></div>
+  <div class="panel tw"><h3>按月</h3><table><tr><th>月份</th><th>上课节数</th><th>充值课时</th><th>金额</th><th>按课程</th></tr>
+  ${ms.map((m,i)=>`<tr><td>${i+1} 月</td><td>${m.att||''}</td><td>${m.buy||''}</td><td>${m.amt?money(m.amt):''}</td><td>${Object.keys(m.by).length?byStr(m.by):''}</td></tr>`).join('')}
+  <tr><th>合计</th><th>${y.att}</th><th>${y.buy}</th><th>${money(y.amt)}</th><th></th></tr></table></div>`;
+  $('#exS').onclick=()=>csv(`${s.name}_${filters.statYear}统计.csv`,[['月份','上课节数','充值课时','金额','按课程'],
+    ...ms.map((m,i)=>[`${i+1}月`,m.att,m.buy,m.amt,Object.entries(m.by).map(([k,v])=>k+' '+v).join('；')]),['合计',y.att,y.buy,y.amt,'']])}
+
+/* ========== 收入 ========== */
+function vIncome(){const tx=db.transactions.filter(t=>t.amount>0),d=new Date();
+  const sum=f=>tx.filter(f).reduce((a,t)=>a+t.amount,0);
+  const mk=`${d.getFullYear()}-${p2(d.getMonth()+1)}`,td=ymd(d);
+  $('#view').innerHTML=`<div class="cards3"><div class="kpi"><b>${money(sum(()=>1))}</b><span>累计总收入</span></div>
+  <div class="kpi"><b>${money(sum(t=>ymd(t.time).startsWith(mk)))}</b><span>本月收入</span></div><div class="kpi"><b>${money(sum(t=>ymd(t.time)===td))}</b><span>今日收款</span></div></div>
+  <div class="bar"><span class="grow"></span><button class="b" id="exI">导出收入明细（CSV）</button></div>
+  <div class="panel tw"><table><tr><th>时间</th><th>学员</th><th>类型</th><th>课时</th><th>金额</th><th>备注</th></tr>
+  ${tx.slice().reverse().map(t=>`<tr><td>${fmtT(t.time)}</td><td>${esc(t.name)}</td><td>${TYPE[t.type]}</td><td>${t.delta}</td><td>${money(t.amount)}</td><td>${esc(t.note)}</td></tr>`).join('')}</table></div>`;
+  $('#exI').onclick=()=>csv('收入明细.csv',[['时间','学员','类型','课时','金额','备注'],...tx.map(t=>[fmtT(t.time),t.name,TYPE[t.type],t.delta,t.amount,t.note])])}
+
+/* ========== 设置 ========== */
+function vSettings(){const cs=db.settings.courses;
+  const wdSel=(v,id)=>`<select ${id?`id="${id}"`:''} data-wd>${[1,2,3,4,5,6,0].map(i=>`<option value="${i}" ${v===i?'selected':''}>${WD[i]}</option>`).join('')}<option value="" ${v==null?'selected':''}>不限</option></select>`;
+  const row=c=>`<div class="row" data-id="${c.id}"><input value="${esc(c.name)}" data-name class="grow">${wdSel(c.weekday)}
+    <span class="sub">${db.transactions.filter(t=>t.type==='consume'&&t.courseId===c.id&&!db.transactions.some(x=>x.undoOf===t.id)).length} 次签到</span>
+    <button class="b" data-sv>保存</button><button class="b" data-ar>${c.archived?'恢复':'归档'}</button></div>`;
+  $('#view').innerHTML=`<div class="panel"><h3>课程管理</h3><div class="sub" style="margin-bottom:8px">改名后，以前的上课记录保留当时的课程名。课程不能删除，不再上的课请「归档」，归档后签到时不再显示，记录全部保留。</div>
+  ${cs.filter(c=>!c.archived).map(row).join('')||'<div class="sub">还没有课程</div>'}
+  <div class="row"><input id="nc" placeholder="新课程名称" class="grow">${wdSel(1,'nw')}<button class="b p" id="addC">添加</button></div>
+  ${cs.some(c=>c.archived)?`<h3 style="margin-top:14px">已归档</h3>${cs.filter(c=>c.archived).map(row).join('')}`:''}</div>
+  <div class="panel"><h3>课时不足提醒</h3><div class="bar">预警线（剩余课时）<input id="th" type="number" min="0" value="${db.settings.warningThreshold}" style="width:80px"> 课时 <button class="b" id="svTh">保存</button></div>
+  <div class="sub">剩余课时 ≤ 预警线时卡片变黄；为 0 时变红并置顶，不能再签到。</div></div>
+  <div class="panel"><h3>数据备份与恢复</h3><div class="bar"><button class="b" id="exJ">导出备份（JSON）</button><button class="b" id="imJ">导入恢复</button><button class="b" id="exL">导出学员名单（CSV）</button></div>
+  <input type="file" id="file" accept=".json,application/json" hidden></div>
+  <div class="panel"><h3>多设备同步（GitHub 私有仓库）</h3>
+  <div class="sub" style="margin-bottom:8px">${Sync.cfg()?'已开启：'+esc(Sync.cfg().owner+'/'+Sync.cfg().repo):'未开启。每台设备填一次即可，令牌只保存在这台设备上。'}</div>
+  <div class="bar"><input id="gRepo" placeholder="私有仓库，如 lrx-bot/class-data" class="grow" value="${esc(Sync.cfg()?Sync.cfg().owner+'/'+Sync.cfg().repo:'')}">
+  <input id="gTok" type="password" placeholder="GitHub 令牌" class="grow"></div>
+  <div class="bar"><button class="b p" id="gOn">${Sync.cfg()?'更新设置并同步':'开启同步'}</button>${Sync.cfg()?'<button class="b" id="gNow">立即同步</button><button class="b d" id="gOff">在本机关闭同步</button>':''}</div></div>
+  <div class="panel"><h3>清空数据</h3><button class="b d" id="clr">清空全部数据</button> <span class="sub">删除所有学员和流水，无法恢复，请先导出备份。</span></div>`;
+  $('#view').querySelectorAll('.row[data-id]').forEach(r=>{const c=cs.find(x=>x.id===r.dataset.id);
+    r.querySelector('[data-sv]').onclick=()=>{const n=r.querySelector('[data-name]').value.trim();if(!n){toast('名称不能为空');return}
+      const w=r.querySelector('[data-wd]').value;c.name=n;c.weekday=w===''?null:+w;c.updatedAt=now();save();toast('已保存')};
+    r.querySelector('[data-ar]').onclick=()=>{if(!c.archived&&!confirm(`归档「${courseLabel(c)}」？签到时将不再显示，记录会保留。`))return;c.archived=!c.archived;c.updatedAt=now();save()}});
+  $('#addC').onclick=()=>{const n=$('#nc').value.trim();if(!n){toast('请填写课程名称');return}const w=$('#nw').value;
+    cs.push({id:'c'+uid(),name:n,weekday:w===''?null:+w,archived:false,updatedAt:now()});save();toast('已添加课程')};
+  $('#svTh').onclick=()=>{db.settings.warningThreshold=Math.max(0,+$('#th').value||0);db.settings.updatedAt=now();save();toast('已保存')};
+  $('#gOn').onclick=async()=>{const m=$('#gRepo').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\.git$|\/$/g,'').split('/');
+    const old=Sync.cfg();const token=$('#gTok').value.trim()||old?.token;
+    if(m.length!==2||!m[0]||!m[1]){toast('仓库格式：用户名/仓库名');return}if(!token){toast('请填写令牌');return}
+    const c={owner:m[0],repo:m[1],path:'data.json',token};
+    try{const r=await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}`,{headers:{Authorization:'Bearer '+token}});
+      if(!r.ok)throw new Error(r.status===404?'找不到仓库，或令牌没有它的权限':'GitHub 返回 '+r.status);
+      const j=await r.json();if(!j.private&&!confirm('这个仓库是公开的，学员信息所有人都能看到。仍然使用？'))return;
+      Sync.setCfg(c);toast('已开启同步');render();Sync.run()}catch(e){toast('连接失败：'+e.message)}};
+  $('#gNow')&&($('#gNow').onclick=()=>Sync.run());
+  $('#gOff')&&($('#gOff').onclick=()=>{if(confirm('在这台设备上关闭同步？本机数据会保留，令牌会被删除。')){Sync.setCfg(null);Sync.status('数据保存在本机浏览器');render()}});
+  $('#exJ').onclick=()=>{const d=new Date();download(`课时管理备份_${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}.json`,JSON.stringify(db,null,2),'application/json')};
+  $('#imJ').onclick=()=>$('#file').click();
+  $('#file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());
+    if(!Array.isArray(d.students)||!Array.isArray(d.transactions))throw new Error('不是有效的备份文件');
+    if(confirm(`备份里有 ${d.students.length} 位学员、${d.transactions.length} 条流水。导入会覆盖当前数据，继续？`)){db=normalize(d);save();toast('导入成功')}}
+    catch(err){toast('导入失败：'+err.message)}e.target.value=''};
+  $('#exL').onclick=()=>csv('学员名单.csv',[['姓名','剩余课时','已购课时','已上课时','最近上课','备注'],...db.students.map(s=>[s.name,s.balance,s.purchasedTotal,s.consumedTotal,s.lastCheckIn?ymd(s.lastCheckIn):'',s.note])]);
+  $('#clr').onclick=()=>{if(confirm('确定清空全部数据？此操作无法恢复。')&&prompt('请输入「清空」确认')==='清空'){db=blank();db.settings.courses=cs;db.clearedAt=now();save();toast('已清空')}}}
+
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function csv(name,rows){download(name,'﻿'+rows.map(r=>r.map(v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')).join('\n'),'text/csv')}
+
+render();
+if(Sync.cfg())Sync.run();
+</script>
+</body>
+</html>
