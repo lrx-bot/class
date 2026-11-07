@@ -5,83 +5,101 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>学员课时管理</title>
 <style>
-:root{--bg:#f6f5f2;--card:#fff;--ink:#1f2328;--muted:#6b7280;--line:#e6e3dd;--accent:#7a5cff;--accent-soft:#efeaff;--warn:#d97706;--warn-soft:#fff6e5;--danger:#dc2626;--danger-soft:#fdecec;--ok:#16a34a}
+:root{--bg:#F7F4EF;--card:#FFFFFF;--ink:#23201C;--muted:#6E665C;--line:#E8E1D7;--line2:#DDD5CA;--accent:#5B3A8C;--accent-ink:#FFFFFF;--accent-soft:#EEE8F6;--warn:#8A4B00;--warn-soft:#FFF6E8;--warn-tag:#F6D9AE;--danger:#A61B1B;--danger-soft:#FBE9E7;--ok:#2F6B4F;--ok-soft:#E3F0E8;--num:"Inter",-apple-system,"SF Pro Display","Helvetica Neue",Arial,sans-serif}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
-header{padding:20px 16px 8px;max-width:960px;margin:auto}
-h1{font-size:22px;margin:0 0 4px}
-.sub{color:var(--muted);font-size:13px}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
-.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
-.kpi b{display:block;font-size:22px}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+header{padding:20px 16px 4px;max-width:960px;margin:auto}
+.hrow{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.date{font-size:13px;color:var(--muted)}
+h1{font-size:22px;margin:0;font-weight:700}
+.pill{font-size:12px;color:var(--muted);background:#EFEAE2;padding:4px 10px;border-radius:999px;white-space:nowrap;max-width:60vw;overflow:hidden;text-overflow:ellipsis}
+.pill.ok{color:var(--ok);background:var(--ok-soft)}.pill.bad{color:var(--danger);background:var(--danger-soft)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+.kpi{background:var(--card);border-radius:14px;padding:12px}
+.kpi b{display:block;font-family:var(--num);font-size:22px;font-weight:700;line-height:1.3}
 .kpi span{color:var(--muted);font-size:12px}
-nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
-nav .in{max-width:960px;margin:auto;display:flex;gap:4px;padding:6px 16px;overflow-x:auto}
-nav button{border:0;background:none;padding:8px 14px;border-radius:999px;font-size:15px;color:var(--muted);cursor:pointer;white-space:nowrap}
-nav button.on{background:var(--accent);color:#fff}
-main{max-width:960px;margin:auto;padding:16px}
+.kpi.warn{background:#FBEBD3}.kpi.warn b,.kpi.warn span{color:var(--warn)}
+nav#tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:6px 4px calc(10px + env(safe-area-inset-bottom,0px))}
+nav#tabs button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;color:var(--muted);font:inherit;font-size:11px;cursor:pointer;min-height:48px}
+nav#tabs button svg{width:22px;height:22px}
+nav#tabs button.on{color:var(--accent);font-weight:700}
+@media(min-width:760px){nav#tabs{position:sticky;top:0;bottom:auto;border:0;border-bottom:1px solid var(--line);background:var(--bg);display:flex;justify-content:center;gap:4px;padding:8px}
+  nav#tabs button{flex-direction:row;gap:6px;font-size:15px;padding:8px 16px;border-radius:999px;min-height:40px}nav#tabs button svg{width:18px;height:18px}
+  nav#tabs button.on{background:var(--accent);color:var(--accent-ink)}body{padding-bottom:24px}}
+main{max-width:960px;margin:auto;padding:12px 16px 16px}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
-.grow{flex:1}
-button.b{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 12px;font-size:14px;cursor:pointer;color:var(--ink)}
-button.p{background:var(--accent);border-color:var(--accent);color:#fff}
-button.d{color:var(--danger);border-color:#f3c4c4}
-button:disabled{opacity:.45;cursor:not-allowed}
-input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:10px;padding:7px 10px;background:#fff;color:var(--ink)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
-.stu{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
-.stu.warn{background:var(--warn-soft);border-color:#f5d39b}
-.stu.zero{background:var(--danger-soft);border-color:#f3b4b4}
-.stu .top{display:flex;justify-content:space-between;align-items:baseline}
-.stu .name{font-weight:600;font-size:16px}
-.stu .bal{font-size:24px;font-weight:700}
-.stu .meta{color:var(--muted);font-size:12px;margin:2px 0 8px}
-.stu .acts{display:flex;gap:6px;flex-wrap:wrap}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.grow{flex:1;min-width:0}
+button.b{border:1px solid var(--line2);background:var(--card);border-radius:12px;padding:0 14px;min-height:40px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}
+button.p{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:500}
+button.d{color:var(--danger);border-color:#EBC3BE}
+button:disabled{opacity:.4;cursor:not-allowed}
+input,select,textarea{font:inherit;font-size:15px;border:1px solid var(--line2);border-radius:12px;padding:0 12px;min-height:44px;background:#fff;color:var(--ink)}
+textarea{padding:10px 12px}
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:12px;padding:0 12px;min-height:44px}
+.search input{border:0;padding:0;min-height:42px;background:transparent;outline:none;width:100%}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
+.stu{background:var(--card);border-radius:16px;padding:10px 10px 10px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.stu.warn{background:var(--warn-soft)}
+.stu.zero{background:var(--danger-soft)}
+.stu .who{flex:1;min-width:0;display:flex;align-items:center;gap:6px}
+.stu .name{font-size:16px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tagw{font-size:11px;color:var(--warn);background:var(--warn-tag);padding:1px 6px;border-radius:6px;white-space:nowrap}
+.tagz{font-size:11px;color:var(--danger);background:#F5CFCA;padding:1px 6px;border-radius:6px;white-space:nowrap}
+.stu .bal{display:flex;align-items:baseline;gap:2px;min-width:48px;justify-content:flex-end}
+.stu .bal b{font-family:var(--num);font-size:24px;font-weight:700}
+.stu.warn .bal b{color:var(--warn)}.stu.zero .bal b{color:var(--danger)}
+.stu .bal span{font-size:12px;color:var(--muted)}
+.minus{width:44px;height:44px;border-radius:12px;border:0;background:var(--accent-soft);color:var(--accent);font-family:var(--num);font-size:16px;font-weight:700;cursor:pointer;flex:none}
+.panel{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px}
 .panel h3{margin:0 0 10px;font-size:16px}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th,td{text-align:left;padding:9px 6px;border-bottom:1px solid #EFE9E0;white-space:nowrap}
 th{color:var(--muted);font-weight:500}
 .tw{overflow-x:auto}
 .pos{color:var(--ok)}.neg{color:var(--danger)}
-.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
-.tag.gray{background:#eee;color:#777}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px dashed var(--line)}
+.sub{color:var(--muted);font-size:13px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid #EFE9E0}
 .row:last-child{border:0}
+.row.arch{opacity:.75}
 .empty{color:var(--muted);text-align:center;padding:30px}
-dialog{border:0;border-radius:16px;padding:0;max-width:440px;width:calc(100% - 32px)}
-dialog::backdrop{background:rgba(0,0,0,.35)}
-.dlg{padding:18px}
-.dlg h3{margin:0 0 12px}
-.dlg label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+dialog{border:0;border-radius:20px;padding:0;max-width:460px;width:calc(100% - 32px);color:var(--ink)}
+dialog::backdrop{background:rgba(35,32,28,.4)}
+.dlg{padding:20px}
+.dlg h3{margin:0 0 12px;font-size:18px}
+.dlg label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
 .dlg input,.dlg select,.dlg textarea{width:100%}
-.dlg .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-.chk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
-.chk input{width:auto}
+.dlg .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.dlg .foot button{min-height:44px}
+.sheet{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sheet button{min-height:52px;font-size:15px}
+.chk{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #EFE9E0;margin:0!important;color:var(--ink)!important;font-size:15px!important}
+.chk input{width:22px!important;min-height:22px;height:22px;accent-color:var(--accent)}
 .list{max-height:50vh;overflow:auto}
-.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;opacity:0;transition:.2s;pointer-events:none}
+.cards3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.bars{display:flex;align-items:flex-end;gap:6px;height:100px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%;font-size:10px;color:var(--muted)}
+.bars i{display:block;width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px}
+.bars i.z{background:var(--line)}
+.bars em{font-style:normal;font-family:var(--num);font-size:11px;color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:20;white-space:nowrap}
 .toast.on{opacity:1}
-@media(max-width:600px){.kpis{grid-template-columns:repeat(2,1fr)}.cards3{grid-template-columns:1fr}}
+@media(max-width:420px){.cards3 .kpi b{font-size:19px}}
 </style>
 </head>
 <body>
 <header>
-  <h1>学员课时管理</h1>
-  <div class="sub" id="syncInfo">数据保存在本机浏览器</div>
+  <div class="hrow"><div><div class="date" id="today"></div><h1>学员课时</h1></div><span class="pill" id="syncInfo">数据保存在本机</span></div>
   <div class="kpis">
-    <div class="kpi"><b id="kStu">0</b><span>学员总数</span></div>
-    <div class="kpi"><b id="kBal">0</b><span>总剩余课时</span></div>
-    <div class="kpi"><b id="kToday">0</b><span>今日上课人次</span></div>
-    <div class="kpi"><b id="kWarn">0</b><span>待提醒人数</span></div>
+    <div class="kpi"><b id="kStu">0</b><span>学员</span></div>
+    <div class="kpi"><b id="kBal">0</b><span>剩余课时</span></div>
+    <div class="kpi warn"><b id="kWarn">0</b><span>待续费</span></div>
   </div>
 </header>
-<nav><div class="in" id="tabs">
-  <button data-t="students" class="on">学员</button>
-  <button data-t="log">流水</button>
-  <button data-t="stats">统计</button>
-  <button data-t="income">收入</button>
-  <button data-t="settings">设置</button>
-</div></nav>
+<nav id="tabs"><button data-t="students" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 010 7M18.5 14.8c1.6.8 2.6 2.6 3 5.2"/></svg>学员</button><button data-t="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg>流水</button><button data-t="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>统计</button><button data-t="income"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 15h2"/></svg>收入</button><button data-t="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>设置</button></nav>
 <main id="view"></main>
 <dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
 <div class="toast" id="toast"></div>
@@ -138,7 +156,7 @@ const Sync={
   KEY:'course-hours-sync',timer:null,busy:false,again:false,
   cfg(){try{return JSON.parse(localStorage.getItem(this.KEY))||null}catch(e){return null}},
   setCfg(c){try{c?localStorage.setItem(this.KEY,JSON.stringify(c)):localStorage.removeItem(this.KEY)}catch(e){}},
-  status(t,ok){const el=$('#syncInfo');if(el){el.textContent=t;el.style.color=ok===false?'var(--danger)':''}},
+  status(t,ok){const el=$('#syncInfo');if(el){el.textContent=t;el.title=t;el.className='pill'+(ok===true?' ok':ok===false?' bad':'')}},
   api(c,method,body){return fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${encodeURIComponent(c.path||'data.json')}`+(method==='GET'?'?t='+Date.now():''),
     {method,headers:{Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json'},body:body&&JSON.stringify(body),cache:'no-store'})},
   async pull(c){const r=await this.api(c,'GET');if(r.status===404)return{data:null,sha:null};
@@ -155,7 +173,7 @@ const Sync={
         if(data&&JSON.stringify(merge(data,data))===JSON.stringify(merged)){break}
         const r=await this.api(c,'PUT',{message:'更新课时数据 '+fmtT(now()),content:b64e(JSON.stringify(merged,null,1)),...(sha?{sha}:{})});
         if(r.ok)break;if(r.status!==409&&r.status!==422)throw new Error('上传失败 '+r.status);}
-      this.status('已同步到 GitHub · '+fmtT(now()).slice(11),true);
+      this.status('已同步 '+fmtT(now()).slice(11),true);
     }catch(e){this.status('同步失败：'+e.message+'（数据已保存在本机）',false)}
     this.busy=false;if(this.again){this.again=false;this.run()}}
 };
@@ -192,43 +210,46 @@ const courseOptions=(sel)=>{const today=new Date().getDay();const cs=activeCours
   const def=sel||cs.find(c=>c.weekday===today)?.id||cs[0]?.id;
   return cs.map(c=>`<option value="${c.id}" ${c.id===def?'selected':''}>${esc(courseLabel(c))}</option>`).join('')||'<option value="">（没有可用课程）</option>'};
 
-$('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.t;
-  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));render()};
+$('#tabs').onclick=e=>{const b=e.target.closest('button');if(b)goTab(b.dataset.t)};
 
 function render(){
   const th=db.settings.warningThreshold,today=ymd(new Date());
   $('#kStu').textContent=db.students.length;
   $('#kBal').textContent=db.students.reduce((a,s)=>a+s.balance,0);
-  $('#kToday').textContent=db.transactions.filter(t=>t.type==='consume'&&ymd(t.time)===today).length
-    -db.transactions.filter(t=>t.type==='undo'&&ymd(t.time)===today).length;
+  {const d=new Date();$('#today').textContent=`${d.getMonth()+1}月${d.getDate()}日 ${WD[d.getDay()]}`}
   $('#kWarn').textContent=db.students.filter(s=>s.balance<=th).length;
   ({students:vStudents,log:vLog,stats:vStats,income:vIncome,settings:vSettings})[tab]()}
 
 /* ========== 学员 ========== */
 function vStudents(){
   const th=db.settings.warningThreshold;
+  const cnt={all:db.students.length,warn:db.students.filter(s=>s.balance<=th&&s.balance>0).length,zero:db.students.filter(s=>s.balance<=0).length};
   let list=[...db.students];
   if(filters.stu==='warn')list=list.filter(s=>s.balance<=th&&s.balance>0);
   if(filters.stu==='zero')list=list.filter(s=>s.balance<=0);
-  list.sort((a,b)=>(b.balance<=0)-(a.balance<=0));
-  $('#view').innerHTML=`<div class="bar">
-    <select id="fStu"><option value="all">全部学员</option><option value="warn">课时不足</option><option value="zero">课时用完</option></select>
-    <input id="q" placeholder="搜索姓名" class="grow">
-    <button class="b" id="batch">批量签到</button><button class="b p" id="add">＋ 添加学员</button></div>
+  list.sort((a,b)=>(b.balance<=0)-(a.balance<=0)||(b.balance<=th)-(a.balance<=th)||a.balance-b.balance);
+  $('#view').innerHTML=`<div class="bar"><label class="search grow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6E665C" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input id="q" placeholder="搜索学员" aria-label="搜索学员"></label><button class="b p" id="batch">批量签到</button></div>
+    <div class="chips">${[['all','全部'],['warn','快用完'],['zero','用完']].map(([k,v])=>`<button class="chip ${filters.stu===k?'on':''}" data-f="${k}">${v} ${cnt[k]}</button>`).join('')}
+    <span class="grow"></span><button class="chip" id="add">＋ 添加学员</button></div>
     <div class="grid" id="grid"></div>`;
-  $('#fStu').value=filters.stu;$('#fStu').onchange=e=>{filters.stu=e.target.value;render()};
+  document.querySelectorAll('.chip[data-f]').forEach(c=>c.onclick=()=>{filters.stu=c.dataset.f;render()});
   const draw=q=>{const g=$('#grid');const l=list.filter(s=>!q||s.name.includes(q));
     g.innerHTML=l.map(s=>{const cls=s.balance<=0?'zero':s.balance<=th?'warn':'';
-      return `<div class="stu ${cls}"><div class="top"><span class="name">${esc(s.name)}</span><span class="bal">${s.balance}</span></div>
-      <div class="meta">已购 ${s.purchasedTotal||0} · 已上 ${s.consumedTotal||0}${s.lastCheckIn?' · 最近 '+ymd(s.lastCheckIn):''}${s.note?' · '+esc(s.note):''}</div>
-      <div class="acts"><button class="b p" data-a="in" data-id="${s.id}" ${s.balance<=0?'disabled':''}>上课 −1</button>
-      <button class="b" data-a="re" data-id="${s.id}">充值</button><button class="b" data-a="adj" data-id="${s.id}">调整</button>
-      <button class="b" data-a="his" data-id="${s.id}">记录</button><button class="b" data-a="st" data-id="${s.id}">统计</button></div></div>`}).join('')||'<div class="empty">还没有学员</div>'};
+      return `<div class="stu ${cls}" data-id="${s.id}"><div class="who"><span class="name">${esc(s.name)}</span>${s.balance<=0?'<span class="tagz">用完</span>':s.balance<=th?'<span class="tagw">快用完</span>':''}</div>
+      <div class="bal"><b>${s.balance}</b><span>节</span></div>
+      <button class="minus" data-a="in" data-id="${s.id}" aria-label="${esc(s.name)} 上课签到" ${s.balance<=0?'disabled':''}>−1</button></div>`}).join('')||'<div class="empty">没有符合的学员</div>'};
   draw('');$('#q').oninput=e=>draw(e.target.value.trim());
-  $('#grid').onclick=e=>{const b=e.target.closest('button');if(!b)return;const s=stu(b.dataset.id);
-    ({in:checkIn,re:recharge,adj:adjust,his:showHistory,st:x=>{filters.statStu=x.id;tab='stats';
-      document.querySelectorAll('#tabs button').forEach(y=>y.classList.toggle('on',y.dataset.t==='stats'));render()}})[b.dataset.a](s)};
+  $('#grid').onclick=e=>{const b=e.target.closest('button');const card=e.target.closest('.stu');if(!card)return;const s=stu(card.dataset.id);
+    if(b){checkIn(s);return}actions(s)};
   $('#add').onclick=addStudent;$('#batch').onclick=batchCheckIn}
+function actions(s){dialog(`<h3>${esc(s.name)} <span class="sub">剩 ${s.balance} 节</span></h3><div class="sheet">
+  <button class="b p" data-x="in" ${s.balance<=0?'disabled':''}>上课 −1</button><button class="b" data-x="re">充值</button>
+  <button class="b" data-x="adj">调整课时</button><button class="b" data-x="his">记录</button>
+  <button class="b" data-x="st" style="grid-column:1/-1">查看统计</button></div><div class="foot"><button class="b" data-cancel>关闭</button></div>`);
+  $('#dlgBody').onclick=e=>{const x=e.target.dataset.x;if(!x)return;$('#dlg').close();
+    ({in:checkIn,re:recharge,adj:adjust,his:showHistory,st:y=>{filters.statStu=y.id;goTab('stats')}})[x](s)}}
+function goTab(t){tab=t;document.querySelectorAll('#tabs button').forEach(y=>y.classList.toggle('on',y.dataset.t===t));render();scrollTo(0,0)}
 
 function addStudent(){dialog(`<h3>添加学员</h3><label>姓名</label><input id="n"><label>初始课时</label><input id="h" type="number" value="8" min="0">
   <label>收款金额（元）</label><input id="m" type="number" value="0" min="0"><label>备注</label><input id="nt">${foot('添加')}`,()=>{
@@ -307,12 +328,17 @@ function vStats(){
   const ms=statsFor(s.id,filters.statYear);
   const y={att:0,buy:0,amt:0,by:{}};ms.forEach(m=>{y.att+=m.att;y.buy+=m.buy;y.amt+=m.amt;for(const k in m.by)y.by[k]=(y.by[k]||0)+m.by[k]});
   const byStr=by=>Object.entries(by).map(([k,v])=>`${esc(k)} ${v}`).join('，')||'—';
-  $('#sv').innerHTML=`<div class="cards3"><div class="kpi"><b>${y.att}</b><span>${filters.statYear} 年上课节数</span></div>
-  <div class="kpi"><b>${y.buy}</b><span>${filters.statYear} 年充值课时</span></div><div class="kpi"><b>${money(y.amt)}</b><span>${filters.statYear} 年缴费金额</span></div></div>
-  <div class="panel"><h3>${esc(s.name)} · 按课程（全年）</h3>${byStr(y.by)}<div class="sub" style="margin-top:6px">当前剩余 ${s.balance} 课时</div></div>
-  <div class="panel tw"><h3>按月</h3><table><tr><th>月份</th><th>上课节数</th><th>充值课时</th><th>金额</th><th>按课程</th></tr>
-  ${ms.map((m,i)=>`<tr><td>${i+1} 月</td><td>${m.att||''}</td><td>${m.buy||''}</td><td>${m.amt?money(m.amt):''}</td><td>${Object.keys(m.by).length?byStr(m.by):''}</td></tr>`).join('')}
-  <tr><th>合计</th><th>${y.att}</th><th>${y.buy}</th><th>${money(y.amt)}</th><th></th></tr></table></div>`;
+  const mx=Math.max(1,...ms.map(m=>m.att));
+  const rows=ms.map((m,i)=>({...m,i})).filter(m=>m.att||m.buy||m.amt).reverse();
+  $('#sv').innerHTML=`<div class="cards3"><div class="kpi"><b>${y.att}</b><span>全年上课</span></div>
+  <div class="kpi"><b>${y.buy}</b><span>全年充值</span></div><div class="kpi"><b>${money(y.amt)}</b><span>全年缴费</span></div></div>
+  <div class="panel"><h3>每月上课节数</h3><div class="bars">${ms.map((m,i)=>`<div><em>${m.att||''}</em><i class="${m.att?'':'z'}" style="height:${Math.max(2,Math.round(m.att/mx*64))}px"></i>${i+1}</div>`).join('')}</div></div>
+  <div class="panel"><h3>${esc(s.name)} · 按月明细 <span class="sub">当前剩余 ${s.balance} 节</span></h3>
+  ${rows.length?`<div class="tw"><table><tr><th>月份</th><th>上课</th><th>充值</th><th>金额</th></tr>
+  ${rows.map(m=>`<tr><td><b>${m.i+1}月</b></td><td>${m.att||'—'}</td><td>${m.buy||'—'}</td><td>${m.amt?money(m.amt):'—'}</td></tr>
+  ${Object.keys(m.by).length?`<tr><td></td><td colspan="3" class="sub" style="white-space:normal;padding-top:0">${byStr(m.by)}</td></tr>`:''}`).join('')}
+  <tr><th>合计</th><th>${y.att}</th><th>${y.buy}</th><th>${money(y.amt)}</th></tr></table></div>`:'<div class="empty">这一年没有记录</div>'}</div>
+  <div class="panel"><h3>按课程（全年）</h3><div style="line-height:1.9">${byStr(y.by)}</div></div>`;
   $('#exS').onclick=()=>csv(`${s.name}_${filters.statYear}统计.csv`,[['月份','上课节数','充值课时','金额','按课程'],
     ...ms.map((m,i)=>[`${i+1}月`,m.att,m.buy,m.amt,Object.entries(m.by).map(([k,v])=>k+' '+v).join('；')]),['合计',y.att,y.buy,y.amt,'']])}
 
@@ -368,7 +394,7 @@ function vSettings(){const cs=db.settings.courses;
     try{await navigator.clipboard.writeText(link);toast('设备链接已复制，发到自己的其他设备上打开即可')}
     catch(e){prompt('复制这个链接，在其他设备上打开：',link)}
     alert('注意：拿到这个链接的人就能查看和修改学员数据，只发给自己，不要转发给别人。')});
-  $('#gOff')&&($('#gOff').onclick=()=>{if(confirm('在这台设备上关闭同步？本机数据会保留，令牌会被删除。')){Sync.setCfg(null);Sync.status('数据保存在本机浏览器');render()}});
+  $('#gOff')&&($('#gOff').onclick=()=>{if(confirm('在这台设备上关闭同步？本机数据会保留，令牌会被删除。')){Sync.setCfg(null);Sync.status('数据保存在本机');render()}});
   $('#exJ').onclick=()=>{const d=new Date();download(`课时管理备份_${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}.json`,JSON.stringify(db,null,2),'application/json')};
   $('#imJ').onclick=()=>$('#file').click();
   $('#file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());
