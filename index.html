@@ -85,6 +85,13 @@ dialog::backdrop{background:rgba(35,32,28,.4)}
 .bars i{display:block;width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px}
 .bars i.z{background:var(--line)}
 .bars em{font-style:normal;font-family:var(--num);font-size:11px;color:var(--ink)}
+#login{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}
+#login[hidden]{display:none}
+.lg{width:100%;max-width:360px;background:var(--card);border-radius:20px;padding:28px 22px;display:flex;flex-direction:column;gap:12px}
+.lg h1{font-size:24px}.lg p{margin:0}
+.lg label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.lg button{min-height:48px;font-size:16px;margin-top:6px}
+#lgMsg{color:var(--danger);min-height:20px}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:20;white-space:nowrap}
 .toast.on{opacity:1}
 @media(max-width:420px){.cards3 .kpi b{font-size:19px}}
@@ -101,6 +108,10 @@ dialog::backdrop{background:rgba(35,32,28,.4)}
 </header>
 <nav id="tabs"><button data-t="students" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 010 7M18.5 14.8c1.6.8 2.6 2.6 3 5.2"/></svg>学员</button><button data-t="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg>流水</button><button data-t="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>统计</button><button data-t="income"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 15h2"/></svg>收入</button><button data-t="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>设置</button></nav>
 <main id="view"></main>
+<div id="login" hidden><form class="lg" id="lgForm"><h1>学员课时</h1><p class="sub">请登录后使用</p>
+  <label>账号<input id="lgUser" autocomplete="username" required></label>
+  <label>密码<input id="lgPass" type="password" autocomplete="current-password" required></label>
+  <button class="b p" id="lgBtn" type="submit">登录</button><p class="sub" id="lgMsg" role="alert"></p></form></div>
 <dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
 <div class="toast" id="toast"></div>
 
@@ -372,6 +383,8 @@ function vSettings(){const cs=db.settings.courses;
   <div class="bar"><input id="gRepo" placeholder="私有仓库，如 lrx-bot/class_data" class="grow" value="${esc(Sync.cfg()?Sync.cfg().owner+'/'+Sync.cfg().repo:'')}">
   <input id="gTok" type="password" placeholder="GitHub 令牌" class="grow"></div>
   <div class="bar"><button class="b p" id="gOn">${Sync.cfg()?'更新设置并同步':'开启同步'}</button>${Sync.cfg()?'<button class="b" id="gNow">立即同步</button><button class="b" id="gLink">生成设备链接</button><button class="b d" id="gOff">在本机关闭同步</button>':''}</div></div>
+  <div class="panel"><h3>登录</h3><div class="sub" style="margin-bottom:8px">${Auth.file?'已开启账号密码登录。':'还没开启。开启后，打开网页要先输账号密码，新设备登录一次就自动连上同步。'}</div>
+  <div class="bar">${Sync.cfg()?'<button class="b" id="aMake">'+(Auth.file?'修改账号密码':'设置账号密码')+'</button>':''}${Auth.file&&Sync.cfg()?'<button class="b d" id="aOut">退出登录</button>':''}</div></div>
   <div class="panel"><h3>清空数据</h3><button class="b d" id="clr">清空全部数据</button> <span class="sub">删除所有学员和流水，无法恢复，请先导出备份。</span></div>`;
   $('#view').querySelectorAll('.row[data-id]').forEach(r=>{const c=cs.find(x=>x.id===r.dataset.id);
     r.querySelector('[data-sv]').onclick=()=>{const n=r.querySelector('[data-name]').value.trim();if(!n){toast('名称不能为空');return}
@@ -389,6 +402,7 @@ function vSettings(){const cs=db.settings.courses;
       const j=await r.json();if(!j.private&&!confirm('这个仓库是公开的，学员信息所有人都能看到。仍然使用？'))return;
       Sync.setCfg(c);toast('已开启同步');render();Sync.run()}catch(e){toast('连接失败：'+e.message)}};
   $('#gNow')&&($('#gNow').onclick=()=>Sync.run());
+  $('#aMake')&&($('#aMake').onclick=makeAuthFile);$('#aOut')&&($('#aOut').onclick=logout);
   $('#gLink')&&($('#gLink').onclick=async()=>{const c=Sync.cfg();
     const link=location.href.split('#')[0]+'#sync='+b64e(JSON.stringify({o:c.owner,r:c.repo,t:c.token})).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
     try{await navigator.clipboard.writeText(link);toast('设备链接已复制，发到自己的其他设备上打开即可')}
@@ -407,9 +421,43 @@ function vSettings(){const cs=db.settings.courses;
 function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function csv(name,rows){download(name,'﻿'+rows.map(r=>r.map(v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')).join('\n'),'text/csv')}
 
+/* ========== 账号密码登录 ==========
+   auth.json 放在网页旁边（公开），里面是用「账号+密码」加密过的同步设置；
+   输对账号密码才能解开，解开后保存在本机，之后不用再登录。 */
+const Auth={ITER:600000,file:null,
+  async key(user,pass,salt){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(user.trim()+'\n'+pass),'PBKDF2',false,['deriveKey']);
+    return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:this.ITER,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])},
+  async make(user,pass,cfg){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    const k=await this.key(user,pass,salt);const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(JSON.stringify({o:cfg.owner,r:cfg.repo,t:cfg.token}))));
+    const b=u=>btoa(String.fromCharCode(...u));return{v:1,iter:this.ITER,salt:b(salt),iv:b(iv),data:b(ct)}},
+  async open(user,pass){const f=this.file,u=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
+    const k=await this.key(user,pass,u(f.salt));const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:u(f.iv)},k,u(f.data));
+    return JSON.parse(new TextDecoder().decode(pt))},
+  async load(){try{const r=await fetch('auth.json?t='+Date.now(),{cache:'no-store'});if(r.ok){const j=await r.json();if(j&&j.data)this.file=j}}catch(e){}},
+  gate(){const need=this.file&&!Sync.cfg();$('#login').hidden=!need;if(need)setTimeout(()=>$('#lgUser').focus(),50);return need}
+};
+$('#lgForm').onsubmit=async e=>{e.preventDefault();const btn=$('#lgBtn'),msg=$('#lgMsg');btn.disabled=true;btn.textContent='正在登录…';msg.textContent='';
+  try{const j=await Auth.open($('#lgUser').value,$('#lgPass').value);Sync.setCfg({owner:j.o,repo:j.r,path:'data.json',token:j.t});
+    $('#lgPass').value='';Auth.gate();render();Sync.run();toast('登录成功')}
+  catch(err){msg.textContent='账号或密码不对'}
+  btn.disabled=false;btn.textContent='登录'};
+function logout(){if(!confirm('退出登录？这台设备上的学员数据会一起清掉，重新登录后会从云端取回。'))return;
+  Sync.setCfg(null);try{localStorage.removeItem(KEY)}catch(e){}db=blank();location.reload()}
+async function makeAuthFile(){const c=Sync.cfg();if(!c){toast('请先开启同步');return}
+  dialog(`<h3>设置登录账号密码</h3><p class="sub">生成一个 auth.json 文件，放到网页仓库 lrx-bot/class 里之后，所有设备打开网页都要先登录。</p>
+  <label>账号</label><input id="aU" autocomplete="off"><label>密码（至少 10 位，字母和数字混合）</label><input id="aP" type="password" autocomplete="new-password">
+  <label>再输一次密码</label><input id="aP2" type="password" autocomplete="new-password">${foot('生成 auth.json')}`,()=>{
+    const u=$('#aU').value.trim(),p=$('#aP').value;
+    if(!u){toast('请填写账号');return false}
+    if(p.length<10||!/[a-zA-Z]/.test(p)||!/\d/.test(p)){toast('密码至少 10 位，要有字母和数字');return false}
+    if(p!==$('#aP2').value){toast('两次密码不一样');return false}
+    toast('正在生成…');Auth.make(u,p,c).then(f=>{download('auth.json',JSON.stringify(f),'application/json');
+      alert('auth.json 已下载。把它上传到 GitHub 仓库 lrx-bot/class（或发给 Claude 帮你开 PR），合并后登录就生效了。\n\n请记好账号和密码，忘了只能在已登录的设备上重新生成。')})})}
+
 (function(){const m=location.hash.match(/sync=([\w-]+)/);if(!m)return;
   try{const j=JSON.parse(b64d(m[1].replace(/-/g,'+').replace(/_/g,'/')));Sync.setCfg({owner:j.o,repo:j.r,path:'data.json',token:j.t});
     history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>toast('这台设备已连上同步'),300)}catch(e){setTimeout(()=>toast('设备链接无效'),300)}})();
+Auth.load().then(()=>{Auth.gate()});
 render();
 if(Sync.cfg())Sync.run();
 </script>
